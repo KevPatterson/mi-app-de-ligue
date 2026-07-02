@@ -1,0 +1,141 @@
+'use client'
+
+import { useState } from 'react'
+import { motion } from 'framer-motion'
+import ImageUploader from '@/components/ImageUploader'
+
+interface ChatAnalyzerProps {
+  onError: (msg: string) => void
+}
+
+type Tone = 'casual' | 'flirty' | 'funny'
+
+export default function ChatAnalyzer({ onError }: ChatAnalyzerProps) {
+  const [isLoading, setIsLoading] = useState(false)
+  const [imageBase64, setImageBase64] = useState<string | null>(null)
+  const [tone, setTone] = useState<Tone>('casual')
+  const [contextSummary, setContextSummary] = useState<string | null>(null)
+  const [suggestions, setSuggestions] = useState<string[]>([])
+  const [needsReview, setNeedsReview] = useState(false)
+  const [reviewReason, setReviewReason] = useState<string | null>(null)
+
+  const handleAnalyze = async () => {
+    if (!imageBase64) {
+      onError('Please upload a screenshot first')
+      return
+    }
+
+    setIsLoading(true)
+    setContextSummary(null)
+    setSuggestions([])
+    setNeedsReview(false)
+    setReviewReason(null)
+
+    try {
+      const resp = await fetch('/api/analyze-chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ imageBase64, tone }),
+      })
+
+      const data = await resp.json()
+
+      if (!resp.ok) {
+        const msg = data.error || 'Failed to analyze conversation'
+        onError(msg)
+        setIsLoading(false)
+        return
+      }
+
+      if (data.needs_review) {
+        setNeedsReview(true)
+        setReviewReason(data.review_reason || null)
+        setContextSummary(data.context_summary || null)
+        setIsLoading(false)
+        return
+      }
+
+      setContextSummary(data.context_summary || null)
+      setSuggestions(data.suggestions || [])
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'An unexpected error occurred'
+      onError(msg)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleCopy = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text)
+    } catch (err) {
+      onError('Failed to copy to clipboard')
+    }
+  }
+
+  return (
+    <div className="w-full space-y-4 text-left">
+      <ImageUploader onImageReady={setImageBase64} isLoading={isLoading} />
+
+      <div className="flex items-center gap-2">
+        {(['casual', 'flirty', 'funny'] as Tone[]).map((t) => (
+          <motion.button
+            key={t}
+            whileHover={{ scale: 1.03 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => setTone(t)}
+            className={`rounded-full px-3 py-1 text-sm font-medium transition-colors ${
+              tone === t ? 'bg-white text-purple-600' : 'bg-white/20 text-white hover:bg-white/30'
+            }`}
+          >
+            {t === 'casual' && 'Casual'}
+            {t === 'flirty' && 'Coqueto'}
+            {t === 'funny' && 'Divertido'}
+          </motion.button>
+        ))}
+      </div>
+
+      <motion.button
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
+        onClick={handleAnalyze}
+        disabled={!imageBase64 || isLoading}
+        className="inline-flex items-center rounded-full bg-white px-6 py-3 font-semibold text-purple-600 shadow-lg transition-colors hover:bg-purple-100 disabled:cursor-not-allowed disabled:opacity-50"
+      >
+        {isLoading ? 'Analizando...' : 'Analizar conversación'}
+      </motion.button>
+
+      {needsReview && (
+        <div className="rounded-lg bg-yellow-500/20 p-4 text-yellow-100">
+          <p>Lo siento — no puedo sugerir respuestas para esta conversación por seguridad.</p>
+          {reviewReason && <p className="mt-2 text-sm">Razón: {reviewReason}</p>}
+        </div>
+      )}
+
+      {contextSummary && (
+        <div className="rounded-lg bg-white/10 p-4 text-white">
+          <p className="font-semibold">Esto es lo que detecté:</p>
+          <p className="mt-2">{contextSummary}</p>
+        </div>
+      )}
+
+      {suggestions.length > 0 && (
+        <div className="grid gap-3 md:grid-cols-3">
+          {suggestions.map((s, i) => (
+            <div key={i} className="rounded-lg bg-white p-4 text-purple-600">
+              <p className="mb-3">{s}</p>
+              <div className="flex justify-end">
+                <button
+                  onClick={() => handleCopy(s)}
+                  className="rounded-full bg-purple-600 px-3 py-1 text-sm font-medium text-white"
+                >
+                  Copiar
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
