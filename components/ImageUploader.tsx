@@ -91,7 +91,7 @@ export default function ImageUploader({ onImageReady, isLoading }: ImageUploader
   }
 
   return (
-    <div className="w-full space-y-4">
+    <div className="w-full space-y-4 text-left">
       {/* Upload Area */}
       {!preview && (
         <motion.div
@@ -99,10 +99,10 @@ export default function ImageUploader({ onImageReady, isLoading }: ImageUploader
           onDragOver={handleDragOver}
           onClick={handleClick}
           whileHover={!isLoading && !isCompressing ? { scale: 1.02 } : {}}
-          className={`cursor-pointer rounded-lg border-2 border-dashed border-white/40 p-8 text-center transition-colors ${
+          className={`cursor-pointer rounded-[1.4rem] border border-dashed border-[#d9b9aa] bg-white/70 p-8 text-center transition-colors ${
             isLoading || isCompressing
               ? 'cursor-not-allowed opacity-50'
-              : 'hover:border-white/60'
+              : 'hover:border-[#d49a8c] hover:bg-white/85'
           }`}
         >
           <input
@@ -114,12 +114,13 @@ export default function ImageUploader({ onImageReady, isLoading }: ImageUploader
             disabled={isLoading || isCompressing}
           />
 
-          <Upload className="mx-auto mb-3 h-8 w-8 text-white/60" />
-          <p className="text-lg font-semibold text-white">
-            {isCompressing ? 'Compressing image...' : 'Upload Your Photo'}
+          <Upload className="mx-auto mb-3 h-8 w-8 text-[#8e5c63]" />
+          <p className="text-lg font-semibold text-[#2d1a1d]">
+            {isCompressing ? 'Comprimiendo imagen...' : 'Sube una foto'
+            }
           </p>
-          <p className="mt-2 text-sm text-white/60">
-            Drag and drop or click to select (JPEG, PNG, WebP max 10MB)
+          <p className="mt-2 text-sm text-[#7b5a5f]">
+            Arrastra o haz clic para elegir (JPEG, PNG, WebP hasta 10 MB)
           </p>
         </motion.div>
       )}
@@ -131,16 +132,12 @@ export default function ImageUploader({ onImageReady, isLoading }: ImageUploader
           animate={{ opacity: 1, y: 0 }}
           className="relative inline-block w-full"
         >
-          <img
-            src={preview}
-            alt="Preview"
-            className="w-full max-h-64 rounded-lg object-cover"
-          />
+          <img src={preview} alt="Preview" className="w-full max-h-64 rounded-[1.4rem] object-cover" />
           <motion.button
             whileTap={{ scale: 0.9 }}
             onClick={handleRemove}
             disabled={isLoading}
-            className="absolute -right-3 -top-3 rounded-full bg-red-500 p-2 text-white shadow-lg transition-colors hover:bg-red-600 disabled:cursor-not-allowed disabled:opacity-50"
+            className="absolute -right-3 -top-3 rounded-full bg-[#2f171c] p-2 text-[#ffe7db] shadow-lg transition-colors hover:bg-[#4a2128] disabled:cursor-not-allowed disabled:opacity-50"
           >
             <X className="h-4 w-4" />
           </motion.button>
@@ -152,7 +149,7 @@ export default function ImageUploader({ onImageReady, isLoading }: ImageUploader
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="rounded-lg bg-red-500/20 p-3 text-sm text-red-200"
+          className="rounded-[1rem] border border-[#d58c88] bg-[#ffe7e4] p-3 text-sm text-[#8b3731]"
         >
           {error}
         </motion.div>

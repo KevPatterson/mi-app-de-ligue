@@ -85,7 +85,7 @@ export default function ChatAnalyzer({ onError }: ChatAnalyzerProps) {
             whileTap={{ scale: 0.95 }}
             onClick={() => setTone(t)}
             className={`rounded-full px-3 py-1 text-sm font-medium transition-colors ${
-              tone === t ? 'bg-white text-purple-600' : 'bg-white/20 text-white hover:bg-white/30'
+              tone === t ? 'bg-[#ffd3bf] text-[#2a1114]' : 'bg-white/70 text-[#6b3c43] hover:bg-white'
             }`}
           >
             {t === 'casual' && 'Casual'}
@@ -100,20 +100,20 @@ export default function ChatAnalyzer({ onError }: ChatAnalyzerProps) {
         whileTap={{ scale: 0.95 }}
         onClick={handleAnalyze}
         disabled={!imageBase64 || isLoading}
-        className="inline-flex items-center rounded-full bg-white px-6 py-3 font-semibold text-purple-600 shadow-lg transition-colors hover:bg-purple-100 disabled:cursor-not-allowed disabled:opacity-50"
+        className="inline-flex items-center rounded-full bg-[#2f171c] px-6 py-3 font-semibold text-[#ffe7db] shadow-lg transition-colors hover:bg-[#4a2128] disabled:cursor-not-allowed disabled:opacity-50"
       >
         {isLoading ? 'Analizando...' : 'Analizar conversación'}
       </motion.button>
 
       {needsReview && (
-        <div className="rounded-lg bg-yellow-500/20 p-4 text-yellow-100">
+        <div className="rounded-[1rem] border border-[#d6b2a0] bg-[#fff1e1] p-4 text-[#7a4a52]">
           <p>Lo siento — no puedo sugerir respuestas para esta conversación por seguridad.</p>
           {reviewReason && <p className="mt-2 text-sm">Razón: {reviewReason}</p>}
         </div>
       )}
 
       {contextSummary && (
-        <div className="rounded-lg bg-white/10 p-4 text-white">
+        <div className="rounded-[1rem] border border-[#d6b2a0] bg-[#fffaf6] p-4 text-[#2d1a1d]">
           <p className="font-semibold">Esto es lo que detecté:</p>
           <p className="mt-2">{contextSummary}</p>
         </div>
@@ -122,12 +122,12 @@ export default function ChatAnalyzer({ onError }: ChatAnalyzerProps) {
       {suggestions.length > 0 && (
         <div className="grid gap-3 md:grid-cols-3">
           {suggestions.map((s, i) => (
-            <div key={i} className="rounded-lg bg-white p-4 text-purple-600">
+            <div key={i} className="rounded-[1rem] border border-[#d6b2a0] bg-white p-4 text-[#2d1a1d]">
               <p className="mb-3">{s}</p>
               <div className="flex justify-end">
                 <button
                   onClick={() => handleCopy(s)}
-                  className="rounded-full bg-purple-600 px-3 py-1 text-sm font-medium text-white"
+                  className="rounded-full bg-[#2f171c] px-3 py-1 text-sm font-medium text-[#ffe7db]"
                 >
                   Copiar
                 </button>

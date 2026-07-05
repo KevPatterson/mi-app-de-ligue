@@ -1,20 +1,21 @@
-import localFont from "next/font/local";
+import { Cormorant_Garamond, Manrope } from 'next/font/google'
 import "./globals.css";
 
-const geistSans = localFont({
-  src: "./fonts/GeistVF.woff",
-  variable: "--font-geist-sans",
-  weight: "100 900",
-});
-const geistMono = localFont({
-  src: "./fonts/GeistMonoVF.woff",
-  variable: "--font-geist-mono",
-  weight: "100 900",
-});
+const displayFont = Cormorant_Garamond({
+  subsets: ['latin'],
+  variable: '--font-display',
+  weight: ['400', '500', '600', '700'],
+})
+
+const bodyFont = Manrope({
+  subsets: ['latin'],
+  variable: '--font-body',
+  weight: ['300', '400', '500', '600', '700', '800'],
+})
 
 export const metadata = {
-  title: 'Rizz Lines Generator',
-  description: 'Generate smooth pickup lines with a click of a button!',
+  title: 'Liggo',
+  description: 'Una app romántica para crear ligue, coqueteo y respuestas con estilo.',
 }
 
 export default function RootLayout({
@@ -24,9 +25,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
+      <body className={`${displayFont.variable} ${bodyFont.variable} antialiased`}>
         {children}
       </body>
     </html>
