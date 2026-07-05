@@ -1,10 +1,5 @@
 import { NextResponse } from 'next/server';
-import OpenAI from 'openai';
-
-// Initialize OpenAI client
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+import { generateChatCompletion, type ChatMessage } from '../../../lib/aiClient'
 
 export async function POST(req: Request) {
   try {
@@ -25,16 +20,9 @@ export async function POST(req: Request) {
     Style: ${style || 'witty and humorous'}
     Please ensure the response is concise, engaging, and creative.`;
 
-    // Call OpenAI API
-    const completion = await openai.chat.completions.create({
-      messages: [{ role: "user", content: aiPrompt }],
-      model: "gpt-3.5-turbo",
-      temperature: 0.7,
-      max_tokens: 100,
-    });
-
-    // Get the generated response
-    const generatedRizz = completion.choices[0].message.content;
+    const messages: ChatMessage[] = [{ role: 'user', content: aiPrompt }]
+    const completion = await generateChatCompletion(messages, { model: 'gpt-3.5-turbo', temperature: 0.7, max_tokens: 100 })
+    const generatedRizz = completion.choices?.[0]?.message?.content
 
     // Return result
     return NextResponse.json({ 

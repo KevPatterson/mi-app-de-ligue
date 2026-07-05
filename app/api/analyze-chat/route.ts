@@ -1,9 +1,5 @@
 import { NextResponse, type NextRequest } from 'next/server'
-import OpenAI from 'openai'
-
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-})
+import { generateChatCompletion, moderateImageIfAvailable, type ChatMessage } from '../../../lib/aiClient'
 
 // Rate limiting: Map to store IP request counts (in-memory). Use Upstash/Redis in prod.
 const rateLimitMap = new Map<string, { count: number; resetTime: number }>()
@@ -66,24 +62,9 @@ export async function POST(request: NextRequest) {
 
     // Moderation check using omni-moderation-latest. If flagged, refuse.
     try {
-      const modResponse = await openai.moderations.create({
-        model: 'omni-moderation-latest',
-        input: [
-          {
-            type: 'image_url',
-            image_url: {
-              url: imageBase64,
-            },
-          } as unknown as string,
-        ] as unknown as string[],
-      })
-
-      const flagged = modResponse.results?.[0]?.flagged ?? false
-      if (flagged) {
-        return NextResponse.json({ error: 'Contenido no permitido' }, { status: 422 })
-      }
+      const mod = await moderateImageIfAvailable(imageBase64)
+      if (mod.flagged) return NextResponse.json({ error: 'Contenido no permitido' }, { status: 422 })
     } catch (moderationErr) {
-      // If moderation fails unexpectedly, log and proceed cautiously (or you may choose to fail).
       console.error('Moderation error:', moderationErr)
     }
 
@@ -107,19 +88,15 @@ RESPONSE FORMAT:
     }`
 
     try {
-      const completion = await openai.chat.completions.create({
-        model: 'gpt-4o-mini',
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: [
-              { type: 'image_url', image_url: { url: imageBase64 } } as unknown as string,
-              { type: 'text', text: userContent } as unknown as string
-            ] as unknown as string }
-        ],
-        response_format: { type: 'json_object' },
-        temperature: 0.7,
-        max_tokens: 800,
-      })
+      const messages: ChatMessage[] = [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: [
+          { type: 'image_url', image_url: { url: imageBase64 } },
+          { type: 'text', text: userContent }
+        ] }
+      ]
+
+      const completion = await generateChatCompletion(messages, { model: 'gpt-4o-mini', temperature: 0.7, max_tokens: 800 })
 
       const raw = completion.choices?.[0]?.message?.content
       if (!raw) {

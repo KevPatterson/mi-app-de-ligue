@@ -1,9 +1,5 @@
 import { NextResponse, type NextRequest } from 'next/server'
-import OpenAI from 'openai'
-
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-})
+import { generateChatCompletion, moderateImageIfAvailable, type ChatMessage } from '../../../lib/aiClient'
 
 // Rate limiting: Map to store IP request counts
 // In production, use Upstash Redis or similar persistent store
@@ -89,33 +85,12 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Run moderation on image using omni-moderation-latest
-    let isFlagged = false
+    // Run moderation on image using configured provider (OpenAI if available)
     try {
-      const moderationResponse = await openai.moderations.create({
-        model: 'omni-moderation-latest',
-        input: [
-          {
-            type: 'image_url',
-            image_url: {
-              url: imageBase64,
-            },
-          } as unknown as string,
-        ] as unknown as string[],
-      })
-
-      isFlagged = moderationResponse.results[0]?.flagged ?? false
+      const mod = await moderateImageIfAvailable(imageBase64)
+      if (mod.flagged) return NextResponse.json({ error: 'Contenido no permitido' }, { status: 422 })
     } catch (moderationError) {
       console.error('Moderation check failed:', moderationError)
-      // Log but don't block on moderation failure; proceed with generation
-      // This is intentional to avoid false negatives blocking legitimate requests
-    }
-
-    if (isFlagged) {
-      return NextResponse.json(
-        { error: 'Contenido no permitido' },
-        { status: 422 }
-      )
     }
 
     // Generate rizz lines using gpt-4o-mini with vision
@@ -143,22 +118,12 @@ Format your response as valid JSON: { "lines": ["line1", "line2", "line3", "line
       text: 'Generate 5 creative, respectful pickup lines based on the visual details in this image.',
     }
 
-    const completion = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
-      messages: [
-        {
-          role: 'system',
-          content: systemPrompt,
-        },
-        {
-          role: 'user',
-          content: [imageContent, textContent],
-        },
-      ],
-      response_format: { type: 'json_object' },
-      temperature: 0.8,
-      max_tokens: 500,
-    })
+    const messages: ChatMessage[] = [
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: [imageContent, textContent] }
+    ]
+
+    const completion = await generateChatCompletion(messages, { model: 'gpt-4o-mini', temperature: 0.8, max_tokens: 500 })
 
     // Extract and parse response
     const responseText = completion.choices[0]?.message?.content
